@@ -113,53 +113,45 @@ def get_dict_group(df, drop_columns, groups, group_level=0):
 
 
 if __name__ == '__main__':
-    # arg = parse_args()
-    # if arg is None:
-    #     print('Wrong arguments!   Use help "python analyzer.py --help/-h" ')
-    #     exit(0)
-    # properties_dict = arg[2]
-    # input_filename = arg[0][0].split("/")[-1]
-    # output_filename = arg[1][0].split("/")[-1]
-    # percentage = int(properties_dict['p'][0])
-    # property_column = properties_dict['pc']
-    # group_column = properties_dict['gc']
-    # h_parent_column = properties_dict['hp'][0]
-    # h_child_column = properties_dict['hc'][0]
-    # temp_cols = set([x[1] for x in group_column])
-    # working_cols = {property_column, h_parent_column, h_child_column}.union(temp_cols)
-    input_filename = 'test_export.xlsx'
+    arg = parse_args()
+    if arg is None:
+        print('Wrong arguments!   Use help "python analyzer.py --help/-h" ')
+        exit(0)
+    properties_dict = arg[2]
+    input_filename = arg[0][0].split("/")[-1]
+    output_filename = arg[1][0].split("/")[-1]
+    percentage = int(properties_dict['p'][0])
+    property_column = properties_dict['pc']
+    group_column = properties_dict['gc']
+    h_parent_column = properties_dict['hp'][0]
+    h_child_column = properties_dict['hc'][0]
+    temp_cols = set([x[1] for x in group_column])
+    working_cols = {property_column, h_parent_column, h_child_column}.union(temp_cols)
     workbook = open_datafile(input_filename)
-    a = workbook[['P_NAME', 'AC_NAME']].value_counts()
-    # print(a.index)
-
-
-    wb = DataFrame(data=a, index=a.index)
-
     hierarchy = {}
-    # for index, row in workbook.iterrows():
-    #     hierarchy[row[h_child_column]] = row[h_parent_column]
-    # paths = []
-    # ind = []
-    # for key in hierarchy.keys():
-    #     ind.append(key)
-    #     paths.append(make_path(key, hierarchy))
-    # df_tree = DataFrame(paths, index=ind)
-    # df_tree.set_axis([f'level {x}' for x in df_tree.columns.tolist()], axis='columns', inplace=True)
-    # df_tree.fillna('_', inplace=True)
-    # for col in workbook.columns.tolist():
-    #     if col not in working_cols:
-    #         workbook.drop(col, axis=1, inplace=True)
-    # workbook.set_index(h_child_column, inplace=True)
-    # workbook = workbook.join(df_tree)
-    # sort_type = sort_by(group_column, h_parent_column, h_child_column, df_tree.columns.tolist())
-    # workbook.reset_index(drop=True, inplace=True)
-    # workbook = workbook.assign(pls=np.full(len(workbook), '+')).drop(h_parent_column, axis=1)
-    # workbook = workbook.pivot_table(index=sort_type.tolist(), columns=property_column, values='pls',
-    #                                 aggfunc=lambda x: 1)
-    # workbook.sort_values(by=workbook.columns.to_list(), inplace=True)
-    # workbook.reset_index(inplace=True)
-    # dc = get_dict_group(workbook, sort_type, sort_type)
-    # answer = DataFrame.from_dict(get_dict_group(workbook, sort_type, sort_type), orient='index')
-    # # answer = answer.stack()
-    # answer.T.to_excel(excel_writer=f'{output_filename}', engine='xlsxwriter')
-    # print(f'OK. File {output_filename} created.')
+    for index, row in workbook.iterrows():
+        hierarchy[row[h_child_column]] = row[h_parent_column]
+    paths = []
+    ind = []
+    for key in hierarchy.keys():
+        ind.append(key)
+        paths.append(make_path(key, hierarchy))
+    df_tree = DataFrame(paths, index=ind)
+    df_tree.set_axis([f'level {x}' for x in df_tree.columns.tolist()], axis='columns', inplace=True)
+    df_tree.fillna('_', inplace=True)
+    for col in workbook.columns.tolist():
+        if col not in working_cols:
+            workbook.drop(col, axis=1, inplace=True)
+    workbook.set_index(h_child_column, inplace=True)
+    workbook = workbook.join(df_tree)
+    sort_type = sort_by(group_column, h_parent_column, h_child_column, df_tree.columns.tolist())
+    workbook.reset_index(drop=True, inplace=True)
+    workbook = workbook.assign(pls=np.full(len(workbook), '+')).drop(h_parent_column, axis=1)
+    workbook = workbook.pivot_table(index=sort_type.tolist(), columns=property_column, values='pls',
+                                    aggfunc=lambda x: 1)
+    workbook.sort_values(by=workbook.columns.to_list(), inplace=True)
+    workbook.reset_index(inplace=True)
+    dc = get_dict_group(workbook, sort_type, sort_type)
+    answer = DataFrame.from_dict(get_dict_group(workbook, sort_type, sort_type), orient='index')
+    answer.T.to_excel(excel_writer=f'{output_filename}', engine='xlsxwriter')
+    print(f'OK. File {output_filename} created.')
